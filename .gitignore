@@ -1,0 +1,10 @@
+# saves
+auto/
+*~
+\#*
+.\#*
+
+# data files
+*.h5
+*.csv
+*.mat
