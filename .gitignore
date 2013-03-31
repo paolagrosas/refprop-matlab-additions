@@ -3,6 +3,7 @@ auto/
 *~
 \#*
 .\#*
+*.asv
 
 # data files
 *.h5
