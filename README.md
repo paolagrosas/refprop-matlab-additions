@@ -25,7 +25,7 @@ MATLAB help:
 
     help refprop
 
-## Run the test
+## Run the tests
 
 In order to run the tests, you need the
 [MATLAB xUnit Test Framework](http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework),
