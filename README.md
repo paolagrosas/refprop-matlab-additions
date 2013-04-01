@@ -25,6 +25,12 @@ MATLAB help:
 
     help refprop
 
+## Run the test
+
+In order to run the tests, you need the
+[MATLAB xUnit Test Framework](http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework),
+and simply need to run the command `runtests` from the `tests` folder.
+
 ## Future work
 
 For now, this is the only function provided as additional tools. Feel
