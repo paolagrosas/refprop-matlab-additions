@@ -1,15 +1,19 @@
-function results = refprop(spec1,value1,spec2,value2,fluidstruct,varargin)
+function results = refprop(spec1, value1, spec2, value2, ...
+    fluidstruct, varargin)
 %REFPROP computes the thermophysical fluid properties of various pure
-%    fluids or mixtures of pure fluids.
+%    fluids or mixtures of pure fluids. This tool is a backend to the NIST
+%    REFPROP MATLAB function 'refpropm'. The later needs to be present in
+%    your MATLAB PATH and be functional for this function to work properly.
 %    
-%    USAGE: results = refprop(spec1,value1,spec2,value2,fluidstruct)
+%    USAGE: results = refprop(spec1, value1, spec2, value2, fluidstruct);
 %
 %    Available properties:
 %    - 'A': Speed of sound [m/s];
 %    - 'cp': Specific heat at constant pressure [J/(kg K)];
 %    - 'cv': Specific heat at constant volume [J/(kg K)];
-%    - 'gamma': Ratio of specific heats (Cp/Cv) [-]
+%    - 'gamma': Surface tension [N/m];
 %    - 'h': Specific enthalpy [J/kg];
+%    - 'kappa': Ratio of specific heats (Cp/Cv) [-]
 %    - 'mu': Dynamic viscosity [Pa*s];
 %    - 'P': Pressure [Pa];
 %    - 'rho': Density [kg/m3];
@@ -29,36 +33,41 @@ function results = refprop(spec1,value1,spec2,value2,fluidstruct,varargin)
 %    Example: fluidstruct = [{'R134a';'R125';'R32'},{0.52;0.25;0.23}]
 %
 %    OPTIONS:
-%    - Uncertainties ['yes'/'no'] - This option depends on LimitsVal1 and 
+%    - 'Uncertainties' ['yes'/'no'] - This option depends on LimitsVal1 and 
 %      limitsval2.
-%    - LimitsVal1 [[lower_value(s) upper_value(s)]];
-%    - limitsval2 [[lower_value(s) upper_value(s)]];
-%    - properties ['all', 'heatpumps', or any column cell containing any
-%      tag from the properties list above.
-%    - quantityqualifier ['nval' (nominal value) is the default, but you
+%    - 'LimitsVal1' [[lower_value(s) upper_value(s)]];
+%    - 'LimitsVal2' [[lower_value(s) upper_value(s)]];
+%    - 'Properties' string containing any tag from the properties list
+%      above, separated with commas (no space). Example: 'P,T,h,s'
+%    - 'QuantityQualifier' ['nval' (nominal value) is the default, but you
+%      can choose the quantifier you want.
+%    - 'LowerValueQualifier' ['lval' (lower value) is the default, but you
+%      can choose the quantifier you want.
+%    - 'UpperValueQualifier' ['uval' (upper value) is the default, but you
 %      can choose the quantifier you want.
 %
 %    MAIN QUANTIFIERS:
-%    - 'mval': Measured value(s), uncalibrated
+%    - 'mval': Measured value(s), not calibrated
 %    - 'nval': Nominal value(s), calibrated
 %    - 'lval': Lower value(s), calibrated
 %    - 'uval': Upper value(s), calibrated
 %
-%
 %    SIMPLE EXAMPLES:
-%    R407C = [{'R134a';'R125';'R32'},{0.52;0.25;0.23}];
-%    comb_gas = [{'Oxygen';'Nitrogen';'CO2'},{0.19;0.80;0.01}, ...
-%        {0.18;0.80;0.02},{0.17;0.80;0.03}];
-%    R134a = {'R134a',1};
-%    test01 = refprop('T',[310;300],'P',[2e5;1.8e5],R407C);
-%    test02 = refprop('T',310,'P',[2e5;1.8e5],R407C);
-%    test03 = refprop('T',[310;300],'P',2e5,R407C);
-%    test04 = refprop('T',[310;300;350],'P',2e5,comb_gas);
+%    R407C = [{'R134a';'R125';'R32'}, {0.52;0.25;0.23}];
+%    comb_gas = [{'Oxygen';'Nitrogen';'CO2'}, {0.19;0.80;0.01}, ...
+%        {0.18;0.80;0.02}, {0.17;0.80;0.03}];
+%    R134a = {'R134a', 1};
+%    test01 = refprop('T', [310;300], 'P', [2e5;1.8e5], R407C);
+%    test02 = refprop('T', 310, 'P', [2e5;1.8e5], R407C);
+%    test03 = refprop('T', [310;300], 'P', 2e5, R407C);
+%    test04 = refprop('T', [310;300;350], 'P', 2e5, comb_gas);
+%    test05 = refprop('T', [310;300], 'P', [2e5;1.8e5], R407C, ...
+%        'Properties', 'P,T,h');
 %    
 %    EXAMPLES WITH OPTIONS:
 %    comb_gas = [{'Oxygen';'Nitrogen';'CO2'},{0.19;0.80;0.01}, ...
 %        {0.18;0.80;0.02},{0.17;0.80;0.03}];
-%    test05 = refprop('T',[310;300;350],'P',[2e5;1.8e5;1.5e5], ...
+%    test06 = refprop('T',[310;300;350],'P',[2e5;1.8e5;1.5e5], ...
 %        comb_gas,'Uncertainties', 'yes', ...
 %        'LimitsVal1', [309,311;299,301;349,351], ...
 %        'LimitsVal2',[1.95e5,2.05e5;1.75e5,1.85e5;1.45e5,1.55e5]);
@@ -71,7 +80,7 @@ options = struct( ...
     'uncertainties', 'no', ...
     'limitsval1', [value1 value1], ...
     'limitsval2', [value2 value2], ...
-    'properties', 'P,T,A,rho,s,h,x,mu,lambda,u,cp,cv', ... % FIXME
+    'properties', 'P,T,A,rho,s,h,x,mu,lambda,u,cp,cv', ...
     'quantityqualifier', 'nval', ...
     'lowervaluequalifier', 'lval', ...
     'uppervaluequalifier', 'uval');
@@ -124,7 +133,7 @@ end
 
 % Is the columns 2:end of the fluidstruct are full of numerics?
 is_num_next_cols_fluids = min(cellfun(@(x) isnumeric(x), ...
-    fluidstruct(:,2:end)));
+    fluidstruct(:, 2:end)));
 
 if is_num_next_cols_fluids ~= 1
     error('Column 2:end of fluidstruct need to be filled numerics.')
@@ -139,29 +148,29 @@ are_lengths_egual_one = [ ...
 
 % Adapt the vectors sizes, when possible
 if sum(are_lengths_egual_one == [0;0;1]) == 3
-    fluidstruct(:,2:size(value1,1)+1) = repmat(fluidstruct(:,2),1, ...
-        size(value1,1));
+    fluidstruct(:, 2:size(value1, 1)+1) = repmat(fluidstruct(:, 2), 1, ...
+        size(value1, 1));
     elseif sum(are_lengths_egual_one == [0;1;0]) == 3
-    value2 = repmat(value2,size(value1,1),1);
+    value2 = repmat(value2, size(value1, 1), 1);
 elseif sum(are_lengths_egual_one == [1;0;0]) == 3
-    value1 = repmat(value1,size(value2,1),1);
+    value1 = repmat(value1, size(value2, 1), 1);
 elseif sum(are_lengths_egual_one == [0;1;1]) == 3
-    value2 = repmat(value2,size(value1,1),1);
-    fluidstruct(:,2:size(value1,1)+1) = repmat(fluidstruct(:,2),1, ...
-        size(value1,1));
+    value2 = repmat(value2, size(value1, 1), 1);
+    fluidstruct(:, 2:size(value1, 1)+1) = repmat(fluidstruct(:, 2), 1, ...
+        size(value1, 1));
 elseif sum(are_lengths_egual_one == [1;1;0]) == 3
-    value1 = repmat(value1,size(fluidstruct(:,2:end),2),1);
-    value2 = repmat(value2,size(fluidstruct(:,2:end),2),1);
+    value1 = repmat(value1, size(fluidstruct(:, 2:end), 2), 1);
+    value2 = repmat(value2, size(fluidstruct(:, 2:end), 2), 1);
 elseif sum(are_lengths_egual_one == [1;0;1]) == 3
-    value1 = repmat(value1,size(value2,1),1);
-    fluidstruct(:,2:size(value1,1)+1) = repmat(fluidstruct(:,2),1, ...
-        size(value2,1));
+    value1 = repmat(value1, size(value2, 1), 1);
+    fluidstruct(:, 2:size(value1, 1)+1) = repmat(fluidstruct(:, 2), 1, ...
+        size(value2, 1));
 end
 
 are_lengths_the_same = sum([ ...
-    size(value1,1) == size(value2,1) ;
-    size(value1,1) == size(fluidstruct(:,2:end),2);
-    size(value2,1) == size(fluidstruct(:,2:end),2) ...
+    size(value1, 1) == size(value2, 1) ;
+    size(value1, 1) == size(fluidstruct(:, 2:end), 2);
+    size(value2, 1) == size(fluidstruct(:, 2:end), 2) ...
     ]);
 
 % If the vectors sizes are still not fine -> error
@@ -190,8 +199,8 @@ end
         % (c.f. requirements)
         
         options.outputs_str = cellfun(@(x)['results.' x '.' ...
-            options.quantityqualifier '(i,1), '], ...
-            options.required_props,'UniformOutput', 0);
+            options.quantityqualifier '(i, 1), '], ...
+            options.required_props, 'UniformOutput', 0);
         options.outputs_str = cell2mat(transpose(options.outputs_str));
         options.outputs_str = options.outputs_str(1:end-2);
         
@@ -220,17 +229,17 @@ end
         
         options.refpropm_props = options.required_props;
         
-        for i = 1:size(conv_table,1)
-            pos = cell2mat(cellfun(@(x)strcmp(x,conv_table{i,1}), ...
+        for i = 1:size(conv_table, 1)
+            pos = cell2mat(cellfun(@(x)strcmp(x, conv_table{i, 1}), ...
                 options.required_props, 'UniformOutput',0));
             if sum(pos) ~= 0
-                options.refpropm_props{pos,1} = conv_table{i,2};
+                options.refpropm_props{pos, 1} = conv_table{i, 2};
             end
-            if strcmp(spec1,conv_table{i,1})
-                spec1 = conv_table{i,2};
+            if strcmp(spec1, conv_table{i, 1})
+                spec1 = conv_table{i, 2};
             end
-            if strcmp(spec2,conv_table{i,1})
-                spec2 = conv_table{i,2};
+            if strcmp(spec2, conv_table{i, 1})
+                spec2 = conv_table{i, 2};
             end
         end
         
@@ -239,14 +248,14 @@ end
         
         % Fomatting of fluidstruct cell for refropm input
         fluids = cell2mat(cellfun(@(x) ['''' x ''', '], ...
-            transpose(fluidstruct(:,1)), 'UniformOutput', 0));
+            transpose(fluidstruct(:, 1)), 'UniformOutput', 0));
         
         % Units conversion for refpropm input
-        if strcmp(spec1,'P')
+        if strcmp(spec1, 'P')
             value1 = value1 ./ 1e3;
         end
         
-        if strcmp(spec2,'P')
+        if strcmp(spec2, 'P')
             value2 = value2 ./ 1e3;
         end
         
@@ -254,15 +263,15 @@ end
         results = struct;
         
         % Computations
-        for i = 1:size(value1,1)
+        for i = 1:size(value1, 1)
             % Formatting of the composition vector
             composition = cell2mat(cellfun(@(x) [num2str(x) ', '], ...
-                transpose(fluidstruct(:,i+1)), 'UniformOutput', 0));
+                transpose(fluidstruct(:, i+1)), 'UniformOutput', 0));
             composition = ['[' composition(1:end-2) ']'];
             % generation of the refpropm command
             refpropm_cmd = ['[' options.outputs_str '] = refpropm(''' ...
                 options.refpropm_props ''', ''' spec1 ''', ' ...
-                'value1(i,1)' ', ''' spec2 ''', ' 'value2(i,1)' ', ' ...
+                'value1(i, 1)' ', ''' spec2 ''', ' 'value2(i, 1)' ', ' ...
                 fluids composition ');'];
             % disp(refpropm_cmd); % debug
             % evaluation of the refpropm command generated above
@@ -274,13 +283,13 @@ end
         % Values adaptations
         
         % SI Units are Pa, not kPa
-        if sum(ismember(options.refpropm_props,'P'))==1
+        if sum(ismember(options.refpropm_props, 'P'))==1
             results.P.(options.quantityqualifier) = ...
                 results.P.(options.quantityqualifier) .* 1e3;
         end
         
         % 0<=x<=1
-        if sum(ismember(options.refpropm_props,'Q'))==1
+        if sum(ismember(options.refpropm_props, 'Q'))==1
             results.x.(options.quantityqualifier) ...
                 (results.x.(options.quantityqualifier) < 0) = 0;
             results.x.(options.quantityqualifier) ...
@@ -296,33 +305,37 @@ end
 
 %% Computations
 
-results = compute_properties(spec1,value1,spec2,value2,fluidstruct);
+results = compute_properties(spec1, value1, spec2, value2, fluidstruct);
 
 %% Uncertainties
 
-if strcmp(options.uncertainties,'yes')
+if strcmp(options.uncertainties, 'yes')
     
-    lvalue1 = options.limitsval1(:,1);
-    uvalue1 = options.limitsval1(:,2);
-    lvalue2 = options.limitsval2(:,1);
-    uvalue2 = options.limitsval2(:,2);
+    lvalue1 = options.limitsval1(:, 1);
+    uvalue1 = options.limitsval1(:, 2);
+    lvalue2 = options.limitsval2(:, 1);
+    uvalue2 = options.limitsval2(:, 2);
     
-    uncert01 = compute_properties(spec1,lvalue1,spec2,lvalue2,fluidstruct);
-    uncert02 = compute_properties(spec1,uvalue1,spec2,uvalue2,fluidstruct);
-    uncert03 = compute_properties(spec1,lvalue1,spec2,uvalue2,fluidstruct);
-    uncert04 = compute_properties(spec1,uvalue1,spec2,lvalue2,fluidstruct);
+    uncert01 = compute_properties(spec1, lvalue1, spec2, lvalue2, ...
+        fluidstruct);
+    uncert02 = compute_properties(spec1, uvalue1, spec2, uvalue2, ...
+        fluidstruct);
+    uncert03 = compute_properties(spec1, lvalue1, spec2, uvalue2, ...
+        fluidstruct);
+    uncert04 = compute_properties(spec1, uvalue1, spec2, lvalue2, ...
+        fluidstruct);
     
     properties = fieldnames(results);
-    for j = 1:size(properties,1)
+    for j = 1:size(properties, 1)
         uncert_mat = [ ...
-            uncert01.(properties{j,1}).(options.quantityqualifier), ...
-            uncert02.(properties{j,1}).(options.quantityqualifier), ...
-            uncert03.(properties{j,1}).(options.quantityqualifier), ...
-            uncert04.(properties{j,1}).(options.quantityqualifier)];
-        results.(properties{j,1}).(options.lowervaluequalifier) = ...
-            min(uncert_mat,[],2);
-        results.(properties{j,1}).(options.uppervaluequalifier) = ...
-            max(uncert_mat,[],2);
+            uncert01.(properties{j, 1}).(options.quantityqualifier), ...
+            uncert02.(properties{j, 1}).(options.quantityqualifier), ...
+            uncert03.(properties{j, 1}).(options.quantityqualifier), ...
+            uncert04.(properties{j, 1}).(options.quantityqualifier)];
+        results.(properties{j, 1}).(options.lowervaluequalifier) = ...
+            min(uncert_mat,[], 2);
+        results.(properties{j, 1}).(options.uppervaluequalifier) = ...
+            max(uncert_mat,[], 2);
     end
 end
 
