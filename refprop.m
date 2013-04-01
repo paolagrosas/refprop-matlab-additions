@@ -5,26 +5,27 @@ function results = refprop(spec1,value1,spec2,value2,fluidstruct,varargin)
 %    USAGE: results = refprop(spec1,value1,spec2,value2,fluidstruct)
 %
 %    Available properties:
-%    - A: Speed of sound [m/s];
-%    - cp: Specific heat at constant pressure [J/(kg K)];
-%    - cv: Specific heat at constant volume [J/(kg K)];
-%    - gamma: Ratio of specific heats (Cp/Cv) [-]
-%    - h: Specific enthalpy [J/kg];
-%    - mu: Dynamic viscosity [Pa*s];
-%    - P: Pressure [Pa];
-%    - rho: Density [kg/m3];
-%    - s: Specific entropy [J/(kg/K)];
-%    - T: Temperature [K];
-%    - u: Specific internal energy [J/kg];
-%    - x: Quality (vapor fraction) (kg/kg);
-%    - lambda: Thermal conductivity [W/(m K)];
+%    - 'A': Speed of sound [m/s];
+%    - 'cp': Specific heat at constant pressure [J/(kg K)];
+%    - 'cv': Specific heat at constant volume [J/(kg K)];
+%    - 'gamma': Ratio of specific heats (Cp/Cv) [-]
+%    - 'h': Specific enthalpy [J/kg];
+%    - 'mu': Dynamic viscosity [Pa*s];
+%    - 'P': Pressure [Pa];
+%    - 'rho': Density [kg/m3];
+%    - 's': Specific entropy [J/(kg/K)];
+%    - 'T': Temperature [K];
+%    - 'u': Specific internal energy [J/kg];
+%    - 'x': Quality (vapor fraction) (kg/kg);
+%    - 'lambda': Thermal conductivity [W/(m K)];
 %
-%    spec1: T, P, h or rho;
-%    spec2: P, rho, h, s, u or x;
+%    spec1: 'T', 'P', 'h' or 'rho';
+%    spec2: 'P', 'rho', 'h', 's', 'u' or 'x';
 %
 %    fluidstruct is a cell formatted as follow:
-%    first column: fluid name (strings)
-%    all the next columns: mass fractions in the mixture [0:1];
+%    - first column: fluid name (strings)
+%    - all the next columns: mass fractions in the mixture [0:1];
+%    
 %    Example: fluidstruct = [{'R134a';'R125';'R32'},{0.52;0.25;0.23}]
 %
 %    OPTIONS:
@@ -70,7 +71,7 @@ options = struct( ...
     'uncertainties', 'no', ...
     'limitsval1', [value1 value1], ...
     'limitsval2', [value2 value2], ...
-    'properties', 'P,T,A,rho,s,h,x,mu,lambda,u,cp,cv,gamma', ... % FIXME
+    'properties', 'P,T,A,rho,s,h,x,mu,lambda,u,cp,cv', ... % FIXME
     'quantityqualifier', 'nval', ...
     'lowervaluequalifier', 'lval', ...
     'uppervaluequalifier', 'uval');
@@ -176,111 +177,121 @@ end
 
 %% Base function
 
-    function results = compute_properties(spec1,value1,spec2,value2,fluidstruct)
-    % Define the properties to be computed
-    
-    % options.required_props = strread(options.properties,'%s','delimiter',',');
-    options.required_props = textscan(options.properties,'%s','Delimiter',',');
-    options.required_props = unique(options.required_props{1});
-    
-    % Formatting of the output string used by refpropm (c.f. requirements)
-
-    options.outputs_str = cellfun(@(x)['results.' x '.' ...
-        options.quantityqualifier '(i,1), '], ...
-        options.required_props,'UniformOutput', 0);
-    options.outputs_str = cell2mat(transpose(options.outputs_str));
-    options.outputs_str = options.outputs_str(1:end-2);
-
-    % Formatting of the refpropm properties required
-    
-    conv_table = { ...
-        'rho', 'D'; ... % Density [kg/m3];
-        's', 'S'; ... % Specific entropy [J/(kg/K)];
-        'h', 'H'; ... % Specific enthalpy [J/kg];
-        'x', 'Q'; ... % Quality (vapor fraction) (kg/kg);
-        'mu', 'V'; ... % Dynamic viscosity [Pa*s];
-        'fixme1', 'I'; ... % Surface tension [N/m];
-        'lambda', 'L'; ... % Thermal conductivity [W/(m K)];
-        'fixme2', 'X'; ... % Liquid phase and gas phase composition; %%% FIXME output format
-        'u', 'U'; ... % Specific internal energy [J/kg];
-        'cp', 'C'; ... % Specific heat at constant pressure [J/(kg K)];
-        'cv', 'O'; ... % Specific heat at constant volume [J/(kg K)];
-        'gamma', 'K' ... % Ratio of specific heats (Cp/Cv) [-]
-        };
-    % Not changed:
-    %   - P: Pressure [Pa];
-    %   - T: Temperature [K];
-    %   - A: Speed of sound [m/s];
-    
-    options.refpropm_props = options.required_props;
-    
-    for i = 1:size(conv_table,1)
-        pos = cell2mat(cellfun(@(x)strcmp(x,conv_table{i,1}), ...
-            options.required_props, 'UniformOutput',0));
-        if sum(pos) ~= 0
-            options.refpropm_props{pos,1} = conv_table{i,2};
+    function results = compute_properties(spec1, value1, spec2, ...
+            value2, fluidstruct)
+        
+        % Define the properties to be computed
+        
+        options.required_props = textscan(options.properties, '%s', ...
+            'Delimiter', ',');
+        options.required_props = unique(options.required_props{1});
+        
+        % Formatting of the output string used by refpropm
+        % (c.f. requirements)
+        
+        options.outputs_str = cellfun(@(x)['results.' x '.' ...
+            options.quantityqualifier '(i,1), '], ...
+            options.required_props,'UniformOutput', 0);
+        options.outputs_str = cell2mat(transpose(options.outputs_str));
+        options.outputs_str = options.outputs_str(1:end-2);
+        
+        % Formatting of the refpropm properties required
+        
+        conv_table = { ...
+            'rho', 'D'; ... % Density [kg/m3];
+            's', 'S'; ... % Specific entropy [J/(kg/K)];
+            'h', 'H'; ... % Specific enthalpy [J/kg];
+            'x', 'Q'; ... % Quality (vapor fraction) (kg/kg);
+            'mu', 'V'; ... % Dynamic viscosity [Pa*s];
+            'gamma', 'I'; ... % Surface tension [N/m];
+            'lambda', 'L'; ... % Thermal conductivity [W/(m K)];
+            'u', 'U'; ... % Specific internal energy [J/kg];
+            'cp', 'C'; ... % Specific heat at constant pressure [J/(kg K)];
+            'cv', 'O'; ... % Specific heat at constant volume [J/(kg K)];
+            'kappa', 'K' ... % Ratio of specific heats (Cp/Cv) [-]
+            };
+        % Not changed:
+        %   - P: Pressure [Pa];
+        %   - T: Temperature [K];
+        %   - A: Speed of sound [m/s];
+        % Not implemented:
+        %   - X: liquid and gas composition as the format of the output is not
+        %        compliant with the current code base.
+        
+        options.refpropm_props = options.required_props;
+        
+        for i = 1:size(conv_table,1)
+            pos = cell2mat(cellfun(@(x)strcmp(x,conv_table{i,1}), ...
+                options.required_props, 'UniformOutput',0));
+            if sum(pos) ~= 0
+                options.refpropm_props{pos,1} = conv_table{i,2};
+            end
+            if strcmp(spec1,conv_table{i,1})
+                spec1 = conv_table{i,2};
+            end
+            if strcmp(spec2,conv_table{i,1})
+                spec2 = conv_table{i,2};
+            end
         end
-        if strcmp(spec1,conv_table{i,1})
-            spec1 = conv_table{i,2};
+        
+        options.refpropm_props = ...
+            cell2mat(transpose(options.refpropm_props));
+        
+        % Fomatting of fluidstruct cell for refropm input
+        fluids = cell2mat(cellfun(@(x) ['''' x ''', '], ...
+            transpose(fluidstruct(:,1)), 'UniformOutput', 0));
+        
+        % Units conversion for refpropm input
+        if strcmp(spec1,'P')
+            value1 = value1 ./ 1e3;
         end
-        if strcmp(spec2,conv_table{i,1})
-            spec2 = conv_table{i,2};
+        
+        if strcmp(spec2,'P')
+            value2 = value2 ./ 1e3;
         end
-    end
-    
-    options.refpropm_props = cell2mat(transpose(options.refpropm_props));
-    
-    % Fomatting of fluidstruct cell for refropm input
-    fluids = cell2mat(cellfun(@(x) ['''' x ''', '], ...
-        transpose(fluidstruct(:,1)), 'UniformOutput', 0));
-    
-    % Units conversion for refpropm input
-    if strcmp(spec1,'P')
-        value1 = value1 ./ 1e3;
-    end
-    
-    if strcmp(spec2,'P')
-        value2 = value2 ./ 1e3;
-    end
-    
-    % Initialization of the output structure
-    results = struct;
-    
-    % Computations
-    for i = 1:size(value1,1)
-        % Formatting of the composition vector
-        composition = cell2mat(cellfun(@(x) [num2str(x) ', '], ...
-            transpose(fluidstruct(:,i+1)), 'UniformOutput', 0));
-        composition = ['[' composition(1:end-2) ']'];
-        % generation of the refpropm command
-        refpropm_cmd = ['[' options.outputs_str '] = refpropm(''' ...
-            options.refpropm_props ''', ''' spec1 ''', ' 'value1(i,1)' ...
-            ', ''' spec2 ''', ' 'value2(i,1)' ', ' fluids composition ');'];
-        % evaluation of the refpropm command generated above
-        eval(refpropm_cmd); % the number of the outputs change depending on the
-        % inputs, so an eval is unfortunately necessary.
-    end
-    
-    % Values adaptations
-    
-    % SI Units are Pa, not kPa
-    if sum(ismember(options.refpropm_props,'P'))==1
-        results.P.(options.quantityqualifier) = ...
-            results.P.(options.quantityqualifier) .* 1e3;
-    end
-    
-    % 0<=x<=1
-    if sum(ismember(options.refpropm_props,'Q'))==1
-        results.x.(options.quantityqualifier) ...
-            (results.x.(options.quantityqualifier) < 0) = 0;
-        results.x.(options.quantityqualifier) ...
-            (results.x.(options.quantityqualifier) > 1) = 1;
-    end
-    
-    % debug
-    % disp(options.refpropm_props)
-    % disp(options.outputs_str)
-    % disp(refpropm_cmd)
+        
+        % Initialization of the output structure
+        results = struct;
+        
+        % Computations
+        for i = 1:size(value1,1)
+            % Formatting of the composition vector
+            composition = cell2mat(cellfun(@(x) [num2str(x) ', '], ...
+                transpose(fluidstruct(:,i+1)), 'UniformOutput', 0));
+            composition = ['[' composition(1:end-2) ']'];
+            % generation of the refpropm command
+            refpropm_cmd = ['[' options.outputs_str '] = refpropm(''' ...
+                options.refpropm_props ''', ''' spec1 ''', ' ...
+                'value1(i,1)' ', ''' spec2 ''', ' 'value2(i,1)' ', ' ...
+                fluids composition ');'];
+            % disp(refpropm_cmd); % debug
+            % evaluation of the refpropm command generated above
+            eval(refpropm_cmd); % the number of the outputs change
+            % depending on the inputs, so an eval is unfortunately
+            % necessary.
+        end
+        
+        % Values adaptations
+        
+        % SI Units are Pa, not kPa
+        if sum(ismember(options.refpropm_props,'P'))==1
+            results.P.(options.quantityqualifier) = ...
+                results.P.(options.quantityqualifier) .* 1e3;
+        end
+        
+        % 0<=x<=1
+        if sum(ismember(options.refpropm_props,'Q'))==1
+            results.x.(options.quantityqualifier) ...
+                (results.x.(options.quantityqualifier) < 0) = 0;
+            results.x.(options.quantityqualifier) ...
+                (results.x.(options.quantityqualifier) > 1) = 1;
+        end
+        
+        % debug
+        % disp(options.refpropm_props)
+        % disp(options.outputs_str)
+        % disp(refpropm_cmd)
+        
     end
 
 %% Computations
@@ -290,7 +301,6 @@ results = compute_properties(spec1,value1,spec2,value2,fluidstruct);
 %% Uncertainties
 
 if strcmp(options.uncertainties,'yes')
-    % TODO
     
     lvalue1 = options.limitsval1(:,1);
     uvalue1 = options.limitsval1(:,2);
