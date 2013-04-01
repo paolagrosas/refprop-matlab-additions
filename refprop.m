@@ -124,7 +124,7 @@ end
 
 % Is the first column of the fluidstruct a cell full of strings?
 is_first_fluids_col_str = sum(cellfun(@(x) ischar(x), ...
-    fluidstruct(:,1)))~=size(fluidstruct(:,1));
+    fluidstruct(:,1)))==size(fluidstruct(:,1),1);
 
 if is_first_fluids_col_str ~= 1
     error(['The first column of fluidstruct needs to be filled ' ...
