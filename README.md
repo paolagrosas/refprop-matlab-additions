@@ -33,3 +33,11 @@ pretty inefficient way to call the initial function (with an `eval`, as
 the number of outputs depends on the user requirements). The best way
 will be in the future to develop a completely new interface to the
 FORTRAN subroutines. This is a next step.
+
+## Author, Copyright and License
+
+© 2013 Jean-Baptiste Carré <jbc@0x1d.org>
+
+All software and files in this repository are licensed under the GNU
+General Public License, either version 3 of the License, or (at your
+option) any later version.
