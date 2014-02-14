@@ -62,8 +62,13 @@ classdef PhysicalValue
         % Methods
         
         function obj = plus(obj01, obj02)
-            nval = obj01.nominalValue + obj02.nominalValue;
-            aeval = sqrt(obj01.absoluteError.^2 + obj02.absoluteError.^2);
+            if isa(obj02, 'double')
+                nval = obj02 + obj01.nominalValue;
+                aeval = obj01.absoluteError;
+            else
+                nval = obj01.nominalValue + obj02.nominalValue;
+                aeval = sqrt(obj01.absoluteError.^2 + obj02.absoluteError.^2);
+            end
             obj = PhysicalValue(nval, aeval);
         end
         
@@ -71,6 +76,9 @@ classdef PhysicalValue
             if isa(obj01, 'double')
                 nval = obj01 - obj02.nominalValue;
                 aeval = obj02.absoluteError;
+            elseif isa(obj02, 'double')
+                nval = obj01.nominalValue - obj02;
+                aeval = obj01.absoluteError;
             else
                 nval = obj01.nominalValue - obj02.nominalValue;
                 aeval = sqrt(obj01.absoluteError.^2 + obj02.absoluteError.^2);
@@ -198,6 +206,22 @@ classdef PhysicalValue
         
         function horzcat(~, ~)
             error('Operation not permitted at the moment.')
+        end
+        
+        function obj = repmat(obj, x, y)
+            if y ~= 1
+                error('PhysicalProperties can be replicated in columns')
+            else
+                nval = repmat(obj.nominalValue, x, y);
+                aeval = repmat(obj.absoluteError, x, y);
+                obj = PhysicalProperties(nval, aeval);
+            end
+        end
+        
+        function obj = abs(obj)
+            nval = abs(obj.nominalValue);
+            aeval = obj.absoluteError;
+            obj = PhysicalValue(nval, aeval);
         end
         
     end

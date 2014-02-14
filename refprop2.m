@@ -61,8 +61,8 @@ if uncertaintyMode == 1
     
     obj.(prop1).absoluteError = aeval1;
     obj.(prop2).absoluteError = aeval2;
-    
 end
+
 %% Base function
 
     function results = ComputeProperties(prop1, value1, prop2, value2, fluid)
@@ -153,6 +153,7 @@ end
             end
             results.(props{l}) = PhysicalValue();
             results.(props{l}).nominalValue = value;
+            results.(props{l}).absoluteError = zeros(size(value));
         end
         
 %         results.P.nominalValue = resultsStruct.P.*1e3;
