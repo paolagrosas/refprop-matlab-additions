@@ -104,13 +104,13 @@ classdef PhysicalValue
         
         function obj = mtimes(obj01, obj02)
             if isa(obj01, 'double')
-                nval = obj02.nominalValue .* obj01;
-                aeval = abs(obj01) .* obj02.absoluteError;
-            else
-                nval = obj01.nominalValue .* obj02.nominalValue;
-                reval = sqrt(obj01.relativeError.^2 + obj02.relativeError.^2);
-                aeval = reval .* nval;
+                obj01 = PhysicalValue(obj01, 0);
+            elseif isa(obj02, 'double')
+                obj02 = PhysicalValue(obj02, 0);
             end
+            nval = obj01.nominalValue .* obj02.nominalValue;
+            reval = sqrt(obj01.relativeError.^2 + obj02.relativeError.^2);
+            aeval = reval .* nval;
             obj = PhysicalValue(nval, aeval);
         end
         
@@ -150,6 +150,33 @@ classdef PhysicalValue
             else
                 result = false;
             end
+        end
+        
+        function result = log10(obj)
+            nval = log10(obj.nominalValue);
+            aeval = sqrt((obj.absoluteError./(log(10) * obj.nominalValue)).^2);
+            result = PhysicalValue(nval, aeval);
+        end
+        
+        function result = log(obj)
+            nval = log(obj.nominalValue);
+            aeval = sqrt(obj.relativeError.^2);
+            result = PhysicalValue(nval, aeval);
+        end
+        
+        function result = power(obj1, obj2)
+            if isa(obj2, 'double')
+                obj2 = PhysicalValue(obj2, 0);
+            end
+            nval = obj1.nominalValue.^(obj2.nominalValue);
+            aeval = sqrt(nval .* ((obj2.nominalValue .* obj1.absoluteError ./ obj1.nominalValue).^2 + (log(obj1.nominalValue) .* obj2.absoluteError).^2));
+            result = PhysicalValue(nval, aeval);
+        end
+        
+        function result = sqrt(obj)
+            nval = sqrt(obj.nominalValue);
+            aeval = sqrt(obj.nominalValue .* (obj.relativeError/2).^2);
+            result = PhysicalValue(nval, aeval);
         end
         
         function result = gt(obj01, obj02)
