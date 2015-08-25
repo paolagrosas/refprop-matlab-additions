@@ -44,7 +44,11 @@ classdef PhysicalValue
         end
         
         function value = get.absoluteError(obj)
-            value = abs(obj.absoluteError);
+            if abs(obj.absoluteError) > abs(obj.nominalValue)
+                value = abs(obj.nominalValue);
+            else
+                value = abs(obj.absoluteError);
+            end
         end
         
         function value = get.relativeError(obj)
